@@ -1,7 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Backend.Swift.Lexer where
--- ^ Handles conversion of rules from BNFC's frontend into a form suitable for
+
+-- \^ Handles conversion of rules from BNFC's frontend into a form suitable for
 --   the CitronLexer that Lotsawa uses as a Lexing module.
 --   Basically need to output Swift code in this Swift enum
 --   ```swift
@@ -52,22 +53,34 @@ regToPattern (RSeqs s) = s
 --   backend or, more importantly, in BNFC's parser frontend.
 lexRule :: TokenCat -> Reader (Map Cat Int, Map TokenCat Reg) String
 lexRule cat = do
-    (catMap, tokenMap) <- ask
-    let i = M.lookup (TokenCat cat) catMap
-            & \case Just n  -> n
-    return $ M.lookup cat tokenMap
-           & \case Just r  -> "LexingRule.regexPattern("
-                              ++ regToPattern r
-                              ++ ", _ in " ++ show i ++ ")"
+  (catMap, tokenMap) <- ask
+  let i =
+        M.lookup (TokenCat cat) catMap
+          & \case
+            Just n -> n
+            Nothing -> -1
+  return $
+    M.lookup cat tokenMap
+      & \case
+        Just r ->
+          "LexingRule.regexPattern(\""
+            ++ regToPattern r
+            ++ "\", {_ in "
+            ++ show i
+            ++ "})"
+        Nothing -> ""
 
 -- | Output the Swift code that creates the Lexer in Citron from the CF grammar.
 citronLexer :: Reader (Map Cat Int, Map TokenCat Reg) String
 citronLexer = do
-    cats <- M.keys . snd <$> ask
-    rules <- mapM lexRule cats
-    return $ unlines (
-            "let lexer: CitronLexer<Int16> = CitronLexer(rules: ["
-            : (mapIndent rules)) ++ ")]"
+  cats <- M.keys . snd <$> ask
+  rules <- mapM lexRule cats
+  return $
+    unlines
+      ( "let lexer: CitronLexer<Int16> = CitronLexer(rules: ["
+          : (mapIndent rules)
+      )
+      ++ "])"
 
 mapIndent :: [String] -> [String]
 mapIndent = map ("\t" ++)

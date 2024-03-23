@@ -68,10 +68,12 @@ library
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
+    other-extensions: LambdaCase,
+                      NamedFieldPuns,
+                      RecordWildCards
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>= 4.19.0.0,
+    build-depends:    base ^>= 4.19.1.0,
                       mtl  ^>= 2.3,
                       BNFC ^>= 2.9,
                       containers ^>= 0.7
@@ -106,6 +108,6 @@ test-suite BNFCswift-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.19.0.0,
+        base ^>=4.19.1.0,
         BNFC ^>=2.9,
         BNFCswift
