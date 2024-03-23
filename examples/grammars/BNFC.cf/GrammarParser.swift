@@ -96,7 +96,7 @@ grammar.addRule(lhs: 22, rhs: [23])
 grammar.addRule(lhs: 23, rhs: [-1,20,-1])
 
 
-public func runGrammarParser(input: String) throws -> Forest<Int16>
+public func runGrammarParser(input: String) throws -> Forest<Int16> {
 	let recognizer: Recognizer<Int16> = Recognizer(PreprocessedGrammar(grammar))
 	var tokens: [Int16] = []
 	lexer.tokenize(input, onFound: {(token) in tokens.append(token)})
@@ -104,4 +104,5 @@ public func runGrammarParser(input: String) throws -> Forest<Int16>
 		recognizer.discover(s, startingAt: i)
 	}
 	return recognizer.forest
+}
 

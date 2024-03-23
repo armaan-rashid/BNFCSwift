@@ -114,7 +114,7 @@ swiftPackage cat =
 swiftParse :: Cat -> String
 swiftParse cat =
   unlines $
-    [ "public func run" ++ show cat ++ "Parser(input: String) throws -> Forest<Int16>"
+    [ "public func run" ++ show cat ++ "Parser(input: String) throws -> Forest<Int16> {"
     ]
       ++ mapIndent
         ( [ "let recognizer: Recognizer<Int16> = Recognizer(PreprocessedGrammar(grammar))",
@@ -128,7 +128,7 @@ swiftParse cat =
             ++ [ "}",
                  "return recognizer.forest"
                ]
-        )
+        ) ++ ["}"]
 
 {-
 ".target("] ++ mapIndent ([
