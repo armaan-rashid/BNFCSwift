@@ -54,15 +54,15 @@ makeSwift
             }
     -- Stitch together the lexing and parsing code.
     let mainParserFile =
-          unlines
+          unlines $
             [ imports,
               "",
-              lexCode,
-              "",
-              show lotsawaGrammar,
-              "",
-              swiftParse mainCat
+              "struct Parser {"
             ]
+              ++ body
+              ++ ["}"]
+          where
+            body = map (unlines . mapIndent . lines) [lexCode, "", show lotsawaGrammar, "", swiftParse mainCat]
     tell
       [ GeneratedFile
           { fileName = "Package.swift",
@@ -99,6 +99,7 @@ swiftPackage cat =
   let pkgName = "BNFC" ++ show cat ++ "Parser"
    in unlines $
         [ "// swift-tools-version: 5.7",
+          "import PackageDescription",
           "let CitronLexer = Target.Dependency.product(name: \"CitronLexerModule\", package: \"citron\")",
           "let Lotsawa = Target.Dependency.product(name: \"Lotsawa\", package: \"Lotsawa\")",
           "let package = Package("
@@ -118,7 +119,7 @@ swiftPackage cat =
                   ( [ ".target("
                     ]
                       ++ mapIndent
-                        ( [ "name: \"" ++ show cat ++ "Parser\"",
+                        ( [ "name: \"" ++ show cat ++ "Parser\",",
                             "dependencies: [Lotsawa, CitronLexer],",
                             "path: \".\")]"
                           ]
@@ -134,13 +135,13 @@ swiftParse cat =
     [ "public func run" ++ show cat ++ "Parser(input: String) throws -> Forest<Int16> {"
     ]
       ++ mapIndent
-        ( [ "let recognizer: Recognizer<Int16> = Recognizer(PreprocessedGrammar(grammar))",
+        ( [ "var recognizer: Recognizer<Int16> = Recognizer(PreprocessedGrammar(grammar))",
             "var tokens: [Int16] = []",
-            "lexer.tokenize(input, onFound: {(token) in tokens.append(token)})",
+            "try lexer.tokenize(input, onFound: {(token) in tokens.append(token)})",
             "for (i,s) in tokens.enumerated() {"
           ]
             ++ mapIndent
-              [ "recognizer.discover(s, startingAt: i)"
+              [ "recognizer.discover(Symbol(id: s), startingAt: UInt32(i))"
               ]
             ++ [ "}",
                  "return recognizer.forest"

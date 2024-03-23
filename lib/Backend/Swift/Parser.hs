@@ -17,6 +17,7 @@ import Control.Monad (foldM)
 import Control.Monad.Reader
 import Control.Monad.State.Lazy
 import Data.Functor ((<&>))
+import Data.List
 import qualified Data.List.NonEmpty as NE
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -42,11 +43,13 @@ data LotsawaRule = Rule Int [Int]
 --   ```
 instance Show LotsawaRule where
   show (Backend.Swift.Parser.Rule i ints) =
-    "(lhs: "
+    "(lhs: Symbol(id: "
       ++ show i
-      ++ ", rhs: "
-      ++ show ints
-      ++ ")"
+      ++ "), rhs: ["
+      ++ displayedInts
+      ++ "])"
+    where
+      displayedInts = intercalate ", " $ map (("Symbol(id: " ++) . (++ ")") . show) ints
 
 data LotsawaGrammar = Grammar
   { rules :: [LotsawaRule],
@@ -60,13 +63,16 @@ data LotsawaGrammar = Grammar
 instance Show LotsawaGrammar where
   show (Grammar {rules, recognizing, categories, terminals}) =
     unlines $
-      ( "var grammar: DefaultGrammar = Grammar(recognizing: "
+      ( "var grammar: DefaultGrammar = Grammar(recognizing: Symbol(id: "
           ++ show recognizing
-          ++ ")"
+          ++ "))"
       )
         : ""
-        : map (("grammar.addRule" ++) . show) rules
-        ++ ["", "let cats: [Int : String] = ["]
+        : "init() {"
+        : (unlines . mapIndent) (map (("grammar.addRule" ++) . show) rules)
+        : "}"
+        : ""
+        : ["", "let cats: [Int : String] = ["]
         ++ (mapIndent . fst) (M.mapAccumWithKey printCats [] categories)
         ++ ["]", "", "let terminals: [Int : String] = ["]
         ++ (mapIndent . fst) (M.mapAccumWithKey printLits [] terminals)

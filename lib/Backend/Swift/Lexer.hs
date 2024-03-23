@@ -59,7 +59,7 @@ lexRule cat = do
     M.lookup cat tokenMap
       & \case
         Just r ->
-          "LexingRule.regexPattern(\""
+          "CitronLexer.LexingRule.regexPattern(\""
             ++ regToPattern r
             ++ "\", {_ in "
             ++ show i
