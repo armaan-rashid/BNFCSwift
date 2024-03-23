@@ -2,3 +2,5 @@
 dist-newstyle/**
 stack.yaml.lock
 *.bak
+**/.build/**
+*.resolved

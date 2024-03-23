@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "lib"
+      component: "lib:BNFCswift"
+
+    - path: "test"
+      component: "BNFCswift:test:BNFCswift-test"
