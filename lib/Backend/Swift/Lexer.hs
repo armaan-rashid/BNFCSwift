@@ -21,10 +21,6 @@ import Data.Function ((&))
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
--- | Get the token rules out of a list of pragmas.
-tokenRules :: CF -> Map TokenCat Reg
-tokenRules = M.fromList . tokenPragmas
-
 -- | Turn the Haskell Reg type into a string suitable for Citron.
 regToPattern :: Reg -> String
 regToPattern REps = ""

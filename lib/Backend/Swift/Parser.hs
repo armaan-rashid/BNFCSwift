@@ -12,6 +12,7 @@ module Backend.Swift.Parser
 where
 
 import BNFC.CF
+import Backend.Swift.Lexer (mapIndent)
 import Control.Monad (foldM)
 import Control.Monad.Reader
 import Control.Monad.State.Lazy
@@ -49,13 +50,15 @@ instance Show LotsawaRule where
 
 data LotsawaGrammar = Grammar
   { rules :: [LotsawaRule],
-    recognizing :: Int
+    recognizing :: Int,
+    categories :: Map Cat Int,
+    terminals :: Map Literal Int
   }
 
 -- | The actual Swift code that initializes the Lotsawa Grammar correctly
 --   in Swift.
 instance Show LotsawaGrammar where
-  show (Grammar {rules, recognizing}) =
+  show (Grammar {rules, recognizing, categories, terminals}) =
     unlines $
       ( "var grammar: DefaultGrammar = Grammar(recognizing: "
           ++ show recognizing
@@ -63,6 +66,16 @@ instance Show LotsawaGrammar where
       )
         : ""
         : map (("grammar.addRule" ++) . show) rules
+        ++ ["", "let cats: [Int : String] = ["]
+        ++ (mapIndent . fst) (M.mapAccumWithKey printCats [] categories)
+        ++ ["]", "", "let terminals: [Int : String] = ["]
+        ++ (mapIndent . fst) (M.mapAccumWithKey printLits [] terminals)
+        ++ ["]"]
+    where
+      printCats :: [String] -> Cat -> Int -> ([String], ())
+      printCats strs a b = (strs ++ [show b ++ " : \"" ++ show a ++ "\","], ())
+      printLits :: [String] -> Literal -> Int -> ([String], ())
+      printLits strs a b = (strs ++ [show b ++ " : " ++ show a ++ ","], ())
 
 -- | The heart of this backend: turn BNFC's rule into a Lotsawa-friendly
 -- rule made of ints only. Read from the maps given in the local environment
