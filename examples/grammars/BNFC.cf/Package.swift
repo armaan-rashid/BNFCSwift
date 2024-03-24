@@ -6,13 +6,13 @@ let CitronLexer = Target.Dependency.product(name: "CitronLexerModule", package: 
 let Lotsawa = Target.Dependency.product(name: "Lotsawa", package: "Lotsawa")
 let package = Package(
 	name: "BNFCGrammarParser",
-	platforms: [.macOS(.v10_15)],
+	products: [.library(name: "BNFCGrammarParser", targets: ["BNFCGrammarParser"])],
 	dependencies: [
 		.package(url: "https://github.com/roop/citron.git", branch: "master"),
 		.package(url: "https://github.com/hylo-lang/Lotsawa.git", branch: "main")],
 	targets: [
 		.target(
-			name: "GrammarParser",
+			name: "BNFCGrammarParser",
 			dependencies: [Lotsawa, CitronLexer],
 			path: ".")]
 )
