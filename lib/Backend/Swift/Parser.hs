@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
@@ -12,12 +13,20 @@ module Backend.Swift.Parser
 where
 
 import BNFC.CF
+  ( CF,
+    Cat,
+    Literal,
+    Rul (Rule, rhsRule, valRCat),
+    Rule,
+    WithPosition (WithPosition, wpThing),
+    allEntryPoints,
+  )
 import Backend.Swift.Lexer (mapIndent)
 import Control.Monad (foldM)
-import Control.Monad.Reader
-import Control.Monad.State.Lazy
+import Control.Monad.Reader (MonadReader (ask), Reader)
+import Control.Monad.State.Lazy (MonadState (get), State, modify)
 import Data.Functor ((<&>))
-import Data.List
+import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -37,11 +46,12 @@ data LotsawaRule = Rule Int [Int]
 
 -- | This show instance renders the rule in Swift code
 --   as suitable function parameters for Lotsawa's grammar code, e.g.
---   `show (Rule 5 [2, 1])` ==
---   ```swift
---   (lhs: 5, rhs: [2, 1])
---   ```
+--   @
+--   show (Rule 5 [2, 1])` ==
+--   (lhs: 5, rhs: [2, 1]) -- Swift
+--   @
 instance Show LotsawaRule where
+  show :: LotsawaRule -> String
   show (Backend.Swift.Parser.Rule i ints) =
     "(lhs: Symbol(id: "
       ++ show i
@@ -51,6 +61,7 @@ instance Show LotsawaRule where
     where
       displayedInts = intercalate ", " $ map (("Symbol(id: " ++) . (++ ")") . show) ints
 
+-- | Represents a grammar, as defined by the specification for Lotsawa.
 data LotsawaGrammar = Grammar
   { rules :: [LotsawaRule],
     recognizing :: Int,
@@ -61,6 +72,7 @@ data LotsawaGrammar = Grammar
 -- | The actual Swift code that initializes the Lotsawa Grammar correctly
 --   in Swift.
 instance Show LotsawaGrammar where
+  show :: LotsawaGrammar -> String
   show (Grammar {rules, recognizing, categories, terminals}) =
     unlines $
       ( "var grammar: DefaultGrammar = Grammar(recognizing: Symbol(id: "

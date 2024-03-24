@@ -3,13 +3,34 @@
 module Backend.Swift (makeSwift) where
 
 import BNFC.Backend.Base
+  ( Backend,
+    GeneratedFile (GeneratedFile, fileContent, fileName, makeComment),
+  )
 import BNFC.CF
-import BNFC.Options hiding (Backend)
-import Backend.Swift.Lexer
+  ( CF,
+    CFG (CFG, cfgKeywords, cfgLiterals, cfgRules, cfgSymbols),
+    Cat (TokenCat),
+    reallyAllCats,
+    tokenPragmas,
+  )
+import BNFC.Options (SharedOptions)
+import Backend.Swift.Lexer (citronLexer, mapIndent)
 import Backend.Swift.Parser
-import Control.Monad.Reader
-import Control.Monad.State.Lazy
-import Control.Monad.Writer
+  ( LotsawaGrammar
+      ( Grammar,
+        categories,
+        recognizing,
+        rules,
+        terminals
+      ),
+    categoryCount,
+    lotsawaRule,
+    recognizingSym,
+    terminalCount,
+  )
+import Control.Monad.Reader (runReader)
+import Control.Monad.State.Lazy (evalState, runState)
+import Control.Monad.Writer (MonadWriter (tell))
 import qualified Data.Map.Strict as M
 
 -- | Run the context free grammar produced by BNFC frontend
@@ -22,13 +43,15 @@ import qualified Data.Map.Strict as M
 makeSwift :: SharedOptions -> CF -> Backend
 makeSwift
   _
+  -- \^ Options for parser generation (not implemented)
   ( cfg@CFG
       { cfgRules,
         cfgLiterals,
         cfgKeywords,
         cfgSymbols
       }
-    ) = do
+    ) = -- \^ Context-Free Grammar to build a parser for
+  do
     -- Count everything!
     let tokens = tokenPragmas cfg
     let totalCats =
@@ -84,6 +107,7 @@ makeSwift
 
 -- Functions that return the necessary Swift boilerplate as constant Strings
 
+-- | Imports necessary Swift packages.
 imports :: String
 imports =
   unlines $
@@ -94,7 +118,7 @@ imports =
         "Foundation"
       ]
 
--- | Painful boilerplate for Package.Swift file.
+-- | Painful boilerplate for the Package.Swift file.
 swiftPackage :: Cat -> String
 swiftPackage cat =
   let pkgName = "BNFC" ++ show cat ++ "Parser"
@@ -150,10 +174,3 @@ swiftParse cat =
                ]
         )
       ++ ["}"]
-
-{-
-".target("] ++ mapIndent ([
-    "name: \"" ++ pkgName ++ "\",",
-    "dependencies: [Lotsawa, CitronLexer],",
-    "path: \".\"),"]) ++ [
--}

@@ -15,8 +15,8 @@ module Backend.Swift.Lexer where
 --   which comes from the [CitronLexer](https://github.com/roop/citron/blob/master/Sources/CitronLexerModule/CitronLexer.swift) module.
 
 import BNFC.Abs (Reg (..))
-import BNFC.CF
-import Control.Monad.Reader
+import BNFC.CF (Cat (TokenCat), TokenCat)
+import Control.Monad.Reader (MonadReader (ask), Reader)
 import Data.Function ((&))
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -41,30 +41,32 @@ regToPattern (RSeqs s) = s
 
 -- | Turn a token category into an actual piece of Swift code. Read from a local
 --   environment of rules generating those categories.
---
+
 --   The assumption is that the reader environment for this function does in fact
 --   contain the TokenCat we're looking for which is why this implementation
 --   deliberately uses partial functions: we want to raise an exception if it's not
 --   because it means there's a bug in either some of the extracting code in this
 --   backend or, more importantly, in BNFC's parser frontend.
 lexRule :: TokenCat -> Reader (Map Cat Int, Map TokenCat Reg) String
-lexRule cat = do
-  (catMap, tokenMap) <- ask
-  let i =
-        M.lookup (TokenCat cat) catMap
-          & \case
-            Just n -> n
-            Nothing -> -1
-  return $
-    M.lookup cat tokenMap
-      & \case
-        Just r ->
-          "CitronLexer.LexingRule.regexPattern(\""
-            ++ regToPattern r
-            ++ "\", {_ in "
-            ++ show i
-            ++ "})"
-        Nothing -> ""
+lexRule cat =
+  -- \^  Token category to convert
+  do
+    (catMap, tokenMap) <- ask
+    let i =
+          M.lookup (TokenCat cat) catMap
+            & \case
+              Just n -> n
+              Nothing -> -1
+    return $
+      M.lookup cat tokenMap
+        & \case
+          Just r ->
+            "CitronLexer.LexingRule.regexPattern(\""
+              ++ regToPattern r
+              ++ "\", {_ in "
+              ++ show i
+              ++ "})"
+          Nothing -> ""
 
 -- | Output the Swift code that creates the Lexer in Citron from the CF grammar.
 citronLexer :: Reader (Map Cat Int, Map TokenCat Reg) String
@@ -78,5 +80,6 @@ citronLexer = do
       )
       ++ "])"
 
+-- | Indents every string in the list.
 mapIndent :: [String] -> [String]
 mapIndent = map ("\t" ++)
