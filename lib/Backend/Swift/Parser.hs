@@ -9,6 +9,7 @@ module Backend.Swift.Parser
     recognizingSym,
     LotsawaRule (..),
     LotsawaGrammar (..),
+    toList,
   )
 where
 
@@ -43,6 +44,9 @@ import qualified Data.Map.Strict as M
 --   any fixed-width integer in the future.
 data LotsawaRule = Rule Int [Int]
   deriving (Eq)
+
+toList :: LotsawaRule -> [Int]
+toList (Backend.Swift.Parser.Rule i ints) = i : ints
 
 -- | This show instance renders the rule in Swift code
 --   as suitable function parameters for Lotsawa's grammar code, e.g.
