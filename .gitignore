@@ -5,3 +5,5 @@ stack.yaml.lock
 **/.build/**
 *.resolved
 *.bak
+*.build/**
+.DS_Store

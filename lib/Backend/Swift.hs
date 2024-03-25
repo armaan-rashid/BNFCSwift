@@ -131,8 +131,8 @@ swiftPackage cat =
         ]
           ++ mapIndent
             ( [ "name: \"" ++ pkgName ++ "\",",
+                "platforms: [.macOS(.v10_15)],",
                 "products: [.library(name: \"" ++ pkgName ++ "\", targets: [\"" ++ pkgName ++ "\"])],",
-                -- "platforms: [.macOS(.v10_15)],",
                 "dependencies: ["
               ]
                 ++ mapIndent
