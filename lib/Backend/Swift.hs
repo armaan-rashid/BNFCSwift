@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Backend.Swift (makeSwift) where
+module Backend.Swift where
 
 import BNFC.Backend.Base
   ( Backend,
@@ -8,14 +8,15 @@ import BNFC.Backend.Base
   )
 import BNFC.CF
   ( CF,
-    CFG (CFG, cfgKeywords, cfgLiterals, cfgRules, cfgSymbols),
+    CFG (..),
     Cat (TokenCat),
+    comments,
     reallyAllCats,
     tokenPragmas,
   )
 import BNFC.Options (SharedOptions)
-import Backend.Swift.Lexer (citronLexer, mapIndent)
-import Backend.Swift.Parser
+import Backend.Swift.CFtoCitronLexer (citronLexer, mapIndent)
+import Backend.Swift.CFtoLotsawaParser
   ( LotsawaGrammar
       ( Grammar,
         categories,
@@ -29,52 +30,59 @@ import Backend.Swift.Parser
     terminalCount,
   )
 import Control.Monad.Reader (runReader)
-import Control.Monad.State.Lazy (evalState, runState)
+import Control.Monad.State.Lazy (runState)
 import Control.Monad.Writer (MonadWriter (tell))
 import qualified Data.Map.Strict as M
 
 -- | Run the context free grammar produced by BNFC frontend
 -- through a conversion process that turns it into a proper
--- Lotsawa grammar in Swift code.
-
--- Right now there's no meaningful options for the Swift backend
--- so we just ignore them, but they're there to satisfy the type
--- signature for all the other backends.
-makeSwift :: SharedOptions -> CF -> Backend
-makeSwift
-  _
-  -- \^ Options for parser generation (not implemented)
+-- Lotsawa grammar in Swift code, raw Swift code for the
+-- CitronLexer, and the category the Parser recognizes.
+makeSwiftGrammar :: CF -> (LotsawaGrammar, String, Cat)
+makeSwiftGrammar
   ( cfg@CFG
       { cfgRules,
-        cfgLiterals,
         cfgKeywords,
         cfgSymbols
       }
-    ) = -- \^ Context-Free Grammar to build a parser for
+    ) =
+    -- \^ Context-Free Grammar to build a parser for
+    do
+      -- Count everything!
+      let totalCats = termsAndNonterms cfg
+          (catMap, i) = count 0 (categoryCount totalCats)
+          (termMap, _) = count i $ (terminalCount (cfgKeywords ++ cfgSymbols))
+          tokenMap = M.fromList (tokenPragmas cfg)
+
+          -- Gather the lexing code.
+          lexCode = with (catMap, tokenMap, comments cfg) citronLexer
+
+          -- Convert raw rules into Lotsawa friendly ones, create the grammar.
+          lotsawaRules = with (catMap, termMap) (mapM lotsawaRule (cfgRules))
+          (mainCat, lotsawaSymbol) = with catMap (recognizingSym cfg)
+          lotsawaGrammar =
+            Grammar
+              { recognizing = lotsawaSymbol,
+                rules = lotsawaRules,
+                categories = catMap,
+                terminals = termMap
+              }
+       in (lotsawaGrammar, lexCode, mainCat)
+    where
+      with = flip runReader
+      count = flip runState
+
+-- | Wrapper for 'makeSwiftGrammar' that stitches everything
+--   together, currently ignoring the options.
+makeSwift ::
+  SharedOptions ->
+  -- \^ Options for parser generation (not implemented)
+  CF ->
+  -- \^ Context-Free Grammar to build a parser for
+  Backend
+makeSwift _ cfg =
   do
-    -- Count everything!
-    let tokens = tokenPragmas cfg
-    let totalCats =
-          reallyAllCats cfg
-            ++ map TokenCat cfgLiterals
-            ++ map (TokenCat . fst) tokens
-    let (catMap, i) = runState (categoryCount totalCats) 0
-    let termMap = evalState (terminalCount (cfgKeywords ++ cfgSymbols)) i
-    let tokenMap = M.fromList tokens
-
-    -- Gather the lexing code.
-    let lexCode = with (catMap, tokenMap) citronLexer
-
-    -- Convert raw rules into Lotsawa friendly ones, create the grammar.
-    let lotsawaRules = with (catMap, termMap) (mapM lotsawaRule (cfgRules))
-    let (mainCat, lotsawaSymbol) = with catMap (recognizingSym cfg)
-    let lotsawaGrammar =
-          Grammar
-            { recognizing = lotsawaSymbol,
-              rules = lotsawaRules,
-              categories = catMap,
-              terminals = termMap
-            }
+    (lotsawaGrammar, lexCode, mainCat) <- return $ makeSwiftGrammar cfg
     -- Stitch together the lexing and parsing code.
     let pkgName = "BNFC" ++ show mainCat ++ "Parser"
     let mainParserFile =
@@ -100,8 +108,13 @@ makeSwift
             fileContent = mainParserFile
           }
       ]
-    where
-      with = flip runReader
+
+-- | Since nonterminals and terminals are categories for Lotsawa gather all of them.
+termsAndNonterms :: CF -> [Cat]
+termsAndNonterms cfg =
+  reallyAllCats cfg
+    ++ map TokenCat (cfgLiterals cfg)
+    ++ map (TokenCat . fst) (tokenPragmas cfg)
 
 -- * Code constants
 
@@ -131,8 +144,8 @@ swiftPackage cat =
         ]
           ++ mapIndent
             ( [ "name: \"" ++ pkgName ++ "\",",
+                "platforms: [.macOS(.v10_15)],",
                 "products: [.library(name: \"" ++ pkgName ++ "\", targets: [\"" ++ pkgName ++ "\"])],",
-                -- "platforms: [.macOS(.v10_15)],",
                 "dependencies: ["
               ]
                 ++ mapIndent

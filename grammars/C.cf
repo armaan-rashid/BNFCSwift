@@ -1,0 +1,71 @@
+{- 
+   a toy incomplete grammar for C
+   that is willfully wrong in multiple places
+-}
+
+Prg. Program ::= [Decl];
+
+terminator Decl "" ;
+FnDecl.    Decl ::= Type Ident "(" Params ")" FnBody ;
+
+-- Special case of Block.Stm with special "nil" constructor
+rules FnBody ::= "{" [Stm] "}" | ";" ;
+
+-- Var and Param constructors: similar, but params can be just types
+separator nonempty Var "," ;
+rules Var ::= Ident | Ident "=" Exp ;
+
+separator nonempty Param "," ;
+rules Param ::= Type | Type Var ;
+
+-- annoying but needed to extend [Param] to void case since separator macro accepts trailing comma
+Void. Params ::= ;
+List. Params ::= [Param]; 
+
+Const. Type  ::= "const" Type1 ;
+rules  Type1 ::= "int" | "long" | "char" | "double" | "bool" | "void" | "struct" Ident ;
+_.     Type  ::= Type1 ;
+
+-- expression terminals
+rules Literal   ::= String | Integer | Char | Double | "true" | "false" ;
+rules ProjOps   ::= "." | "->";
+rules PostOps   ::= "++" | "--";
+rules PreOps    ::= "++" | "--" | "!" | "*";
+rules MulDivOps ::= "*" | "/" | "%";
+rules AddSubOps ::= "+" | "-" ;
+rules ShiftOps  ::= "<<" | ">>";
+rules CmpOps    ::= "<" | ">" | "<=" | ">=" ;
+rules EqOps     ::= "==" | "!=" ;
+rules AssnOps   ::= "=" | "+=" | "-=";
+
+separator nonempty Exp ",";
+Qual.     Exp15 ::= Ident ;
+Lit.      Exp15 ::= Literal ;
+Idx.      Exp14 ::= Exp14 "[" Exp "]";
+FnCall.   Exp14 ::= Exp14 "(" [Exp] ")";
+Proj.     Exp14 ::= Exp14 ProjOps Exp15 ;
+Post.     Exp14 ::= Exp14 PostOps ;
+Pre.      Exp13 ::= PreOps Exp13 ;
+MulDiv.   Exp12 ::= Exp12 MulDivOps Exp13 ;
+AddSub.   Exp11 ::= Exp11 AddSubOps Exp12 ;
+Shift.    Exp10 ::= Exp10 ShiftOps Exp11 ;
+Cmp.      Exp9  ::= Exp9 CmpOps Exp10 ;
+Eq.       Exp8  ::= Exp8 EqOps Exp9 ;
+And.      Exp4  ::= Exp4 "&&" Exp5 ;
+Or.       Exp3  ::= Exp3 "||" Exp4 ;
+Assn.     Exp2  ::= Exp3 AssnOps Exp2 ;	-- notice right-associativity!
+Tern.     Exp2  ::= Exp3 "?" Exp ":" Exp2 ;
+coercions Exp 15 ;
+
+
+terminator Stm "" ;
+Assign.    Stm ::= Type [Var] ";" ;
+Expr.      Stm ::= Exp ";" ;
+Return.    Stm ::= "return" Exp ";" ;
+While.     Stm ::= "while" "(" Exp ")" Stm ;
+Block.     Stm ::= "{" [Stm] "}" ;
+Elif.      Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+If.        Stm ::= "if" "(" Exp ")" Stm ;
+
+comment "//" ;
+comment "/*" "*/" ;

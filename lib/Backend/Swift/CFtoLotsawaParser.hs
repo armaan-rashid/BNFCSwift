@@ -2,13 +2,14 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Backend.Swift.Parser
+module Backend.Swift.CFtoLotsawaParser
   ( terminalCount,
     categoryCount,
     lotsawaRule,
     recognizingSym,
     LotsawaRule (..),
     LotsawaGrammar (..),
+    toList,
   )
 where
 
@@ -21,7 +22,7 @@ import BNFC.CF
     WithPosition (WithPosition, wpThing),
     allEntryPoints,
   )
-import Backend.Swift.Lexer (mapIndent)
+import Backend.Swift.CFtoCitronLexer (mapIndent)
 import Control.Monad (foldM)
 import Control.Monad.Reader (MonadReader (ask), Reader)
 import Control.Monad.State.Lazy (MonadState (get), State, modify)
@@ -41,8 +42,11 @@ import qualified Data.Map.Strict as M
 --   can be as many as 65536 terminals and nonterminals (combined) in a
 --   grammar. That said, there's no reason not to make this polymorphic to
 --   any fixed-width integer in the future.
-data LotsawaRule = Rule Int [Int]
+data LotsawaRule = LotsawaRule Int [Int]
   deriving (Eq)
+
+toList :: LotsawaRule -> [Int]
+toList (LotsawaRule i ints) = i : ints
 
 -- | This show instance renders the rule in Swift code
 --   as suitable function parameters for Lotsawa's grammar code, e.g.
@@ -52,7 +56,7 @@ data LotsawaRule = Rule Int [Int]
 --   @
 instance Show LotsawaRule where
   show :: LotsawaRule -> String
-  show (Backend.Swift.Parser.Rule i ints) =
+  show (LotsawaRule i ints) =
     "(lhs: Symbol(id: "
       ++ show i
       ++ "), rhs: ["
@@ -99,11 +103,11 @@ instance Show LotsawaGrammar where
 -- rule made of ints only. Read from the maps given in the local environment
 -- to do this!
 lotsawaRule :: Rule -> Reader (Map Cat Int, Map Literal Int) LotsawaRule
-lotsawaRule (BNFC.CF.Rule {valRCat = (WithPosition {wpThing = cat}), rhsRule = rule}) = do
+lotsawaRule (Rule {valRCat = (WithPosition {wpThing = cat}), rhsRule = rule}) = do
   (catMap, litMap) <- ask
   let lhs = forceLookup $ M.lookup cat catMap
   let rhs = map (forceLookup . either (`M.lookup` catMap) (`M.lookup` litMap)) rule
-  return $ Backend.Swift.Parser.Rule lhs rhs
+  return $ LotsawaRule lhs rhs
   where
     forceLookup = maybe (-1) id
 
