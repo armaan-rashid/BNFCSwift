@@ -7,22 +7,24 @@ import Foundation
 
 struct Parser {
 	let lexer: CitronLexer<Int16> = CitronLexer(rules: [
-		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+[Ll]", {_ in 83})
-		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+ul|UL", {_ in 84})
-		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+[Uu]", {_ in 82})
-		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+", {_ in 81})
-		CitronLexer.LexingRule.regexPattern("'.-['\]|\['\nrt]'", {_ in 93})
-		CitronLexer.LexingRule.regexPattern("[0-9]+.|.[0-9]+[Ee]-?[0-9]+?|[0-9]+[Ee]-?[0-9]+|[0-9]+.[0-9]+E-?[0-9]+", {_ in 89})
-		CitronLexer.LexingRule.regexPattern("[0-9]+.[0-9]+|[0-9]+.|.[0-9]+[Ee]-?[0-9]+?[Ff]|[0-9]+[Ee]-?[0-9]+[Ff]", {_ in 90})
-		CitronLexer.LexingRule.regexPattern("[0-9]+.[0-9]+|[0-9]+.|.[0-9]+[Ee]-?[0-9]+?[Ll]|[0-9]+[Ee]-?[0-9]+[Ll]", {_ in 91})
-		CitronLexer.LexingRule.regexPattern("[123456789][0-9]*[Ll]", {_ in 79})
-		CitronLexer.LexingRule.regexPattern("0[01234567]*", {_ in 85})
-		CitronLexer.LexingRule.regexPattern("0[01234567]*[Ll]", {_ in 87})
-		CitronLexer.LexingRule.regexPattern("0[01234567]*ul|UL", {_ in 88})
-		CitronLexer.LexingRule.regexPattern("0[01234567]*[Uu]", {_ in 86})
-		CitronLexer.LexingRule.regexPattern("'\u[ABCDEFabcdef]|[0-9][ABCDEFabcdef]|[0-9][ABCDEFabcdef]|[0-9][ABCDEFabcdef]|[0-9]'", {_ in 92})
-		CitronLexer.LexingRule.regexPattern("[123456789][0-9]*[Uu]", {_ in 78})
-		CitronLexer.LexingRule.regexPattern("[123456789][0-9]*ul|UL", {_ in 80})
+		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+[Ll]", {_ in 83}),
+		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+ul|UL", {_ in 84}),
+		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+[Uu]", {_ in 82}),
+		CitronLexer.LexingRule.regexPattern("0[Xx][ABCDEFabcdef]|[0-9]+", {_ in 81}),
+		CitronLexer.LexingRule.regexPattern("'.-['\]|\['\nrt]'", {_ in 93}),
+		CitronLexer.LexingRule.regexPattern("[0-9]+.|.[0-9]+[Ee]-?[0-9]+?|[0-9]+[Ee]-?[0-9]+|[0-9]+.[0-9]+E-?[0-9]+", {_ in 89}),
+		CitronLexer.LexingRule.regexPattern("[0-9]+.[0-9]+|[0-9]+.|.[0-9]+[Ee]-?[0-9]+?[Ff]|[0-9]+[Ee]-?[0-9]+[Ff]", {_ in 90}),
+		CitronLexer.LexingRule.regexPattern("[0-9]+.[0-9]+|[0-9]+.|.[0-9]+[Ee]-?[0-9]+?[Ll]|[0-9]+[Ee]-?[0-9]+[Ll]", {_ in 91}),
+		CitronLexer.LexingRule.regexPattern("[123456789][0-9]*[Ll]", {_ in 79}),
+		CitronLexer.LexingRule.regexPattern("0[01234567]*", {_ in 85}),
+		CitronLexer.LexingRule.regexPattern("0[01234567]*[Ll]", {_ in 87}),
+		CitronLexer.LexingRule.regexPattern("0[01234567]*ul|UL", {_ in 88}),
+		CitronLexer.LexingRule.regexPattern("0[01234567]*[Uu]", {_ in 86}),
+		CitronLexer.LexingRule.regexPattern("'\u[ABCDEFabcdef]|[0-9][ABCDEFabcdef]|[0-9][ABCDEFabcdef]|[0-9][ABCDEFabcdef]|[0-9]'", {_ in 92}),
+		CitronLexer.LexingRule.regexPattern("[123456789][0-9]*[Uu]", {_ in 78}),
+		CitronLexer.LexingRule.regexPattern("[123456789][0-9]*ul|UL", {_ in 80}),
+		CitronLexer.LexingRule.regexPattern("//.*$", {_ in nil}),
+		CitronLexer.LexingRule.regex(try! NSRegularExpression(pattern: "/*.*?*/", options: NSRegularExpression.Options.dotMatchesLineSeparators), {_ in nil}),
 	])
 
 

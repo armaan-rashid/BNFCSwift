@@ -7,6 +7,8 @@ import Foundation
 
 struct Parser {
 	let lexer: CitronLexer<Int16> = CitronLexer(rules: [
+		CitronLexer.LexingRule.regexPattern("//.*$", {_ in nil}),
+		CitronLexer.LexingRule.regex(try! NSRegularExpression(pattern: "/*.*?*/", options: NSRegularExpression.Options.dotMatchesLineSeparators), {_ in nil}),
 	])
 
 

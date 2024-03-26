@@ -7,9 +7,9 @@ import Foundation
 
 struct Parser {
 	let lexer: CitronLexer<Int16> = CitronLexer(rules: [
-		CitronLexer.LexingRule.regexPattern("[a-z]_|[0-9]|[A-Za-z]*", {_ in 12})
-		CitronLexer.LexingRule.regexPattern("[A-Z]_|[0-9]|[A-Za-z]*", {_ in 11})
-		CitronLexer.LexingRule.regexPattern("_.*", {_ in 13})
+		CitronLexer.LexingRule.regexPattern("[a-z]_|[0-9]|[A-Za-z]*", {_ in 12}),
+		CitronLexer.LexingRule.regexPattern("[A-Z]_|[0-9]|[A-Za-z]*", {_ in 11}),
+		CitronLexer.LexingRule.regexPattern("_.*", {_ in 13}),
 	])
 
 

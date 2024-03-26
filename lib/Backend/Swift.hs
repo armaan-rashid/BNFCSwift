@@ -8,14 +8,15 @@ import BNFC.Backend.Base
   )
 import BNFC.CF
   ( CF,
-    CFG (CFG, cfgKeywords, cfgLiterals, cfgRules, cfgSymbols),
+    CFG (..),
     Cat (TokenCat),
+    comments,
     reallyAllCats,
     tokenPragmas,
   )
 import BNFC.Options (SharedOptions)
-import Backend.Swift.Lexer (citronLexer, mapIndent)
-import Backend.Swift.Parser
+import Backend.Swift.CFtoCitronLexer (citronLexer, mapIndent)
+import Backend.Swift.CFtoLotsawaParser
   ( LotsawaGrammar
       ( Grammar,
         categories,
@@ -29,7 +30,7 @@ import Backend.Swift.Parser
     terminalCount,
   )
 import Control.Monad.Reader (runReader)
-import Control.Monad.State.Lazy (evalState, runState)
+import Control.Monad.State.Lazy (runState)
 import Control.Monad.Writer (MonadWriter (tell))
 import qualified Data.Map.Strict as M
 
@@ -49,12 +50,12 @@ makeSwiftGrammar
     do
       -- Count everything!
       let totalCats = termsAndNonterms cfg
-          (catMap, i) = runState (categoryCount totalCats) 0
-          termMap = evalState (terminalCount (cfgKeywords ++ cfgSymbols)) i
+          (catMap, i) = count 0 (categoryCount totalCats)
+          (termMap, _) = count i $ (terminalCount (cfgKeywords ++ cfgSymbols))
           tokenMap = M.fromList (tokenPragmas cfg)
 
           -- Gather the lexing code.
-          lexCode = with (catMap, tokenMap) citronLexer
+          lexCode = with (catMap, tokenMap, comments cfg) citronLexer
 
           -- Convert raw rules into Lotsawa friendly ones, create the grammar.
           lotsawaRules = with (catMap, termMap) (mapM lotsawaRule (cfgRules))
@@ -69,6 +70,7 @@ makeSwiftGrammar
        in (lotsawaGrammar, lexCode, mainCat)
     where
       with = flip runReader
+      count = flip runState
 
 -- | Wrapper for 'makeSwiftGrammar' that stitches everything
 --   together, currently ignoring the options.

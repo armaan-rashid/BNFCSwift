@@ -61,8 +61,8 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  Backend.Swift
-                      Backend.Swift.Lexer
-                      Backend.Swift.Parser
+                      Backend.Swift.CFtoCitronLexer
+                      Backend.Swift.CFtoLotsawaParser
 
     -- Modules included in this library but not exported.
     -- other-modules:

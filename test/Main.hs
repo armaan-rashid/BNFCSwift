@@ -10,8 +10,7 @@ import BNFC.CF
 import BNFC.GetCF
 import BNFC.Options
 import Backend.Swift
-import Backend.Swift.Parser hiding (Rule)
-import qualified Backend.Swift.Parser as P
+import Backend.Swift.CFtoLotsawaParser
 import Control.Monad (zipWithM, zipWithM_)
 import Data.Either (rights)
 import Data.List (nub)
@@ -121,11 +120,12 @@ prop_ruleMapping (cfg@CFG {cfgRules}) =
   let (grammar@Grammar {rules, categories, terminals}, _, _) = makeSwiftGrammar cfg
    in intToCat rules categories terminals == map (\r -> (wpThing (valRCat r), rhsRule r)) cfgRules
 
+-- Helper for prop_ruleMapping
 intToCat :: [LotsawaRule] -> Map Cat Int -> Map Literal Int -> [(Cat, SentForm)]
 intToCat rules cats lits = map reconstructRule rules
   where
     catInts = map swap $ M.toList cats
     litInts = map swap $ M.toList lits
-    reconstructRule (P.Rule lhs rhs) = (forceLookup lhs catInts, map reconstructSent rhs)
+    reconstructRule (LotsawaRule lhs rhs) = (forceLookup lhs catInts, map reconstructSent rhs)
     reconstructSent i = maybe (Left $ forceLookup i catInts) Right (lookup i litInts)
     forceLookup lhs catInts = maybe (Cat "") id (lookup lhs catInts)
